@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <title>My Profile</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+  <h2>Welcome to Your Profile</h2>
+
+
+  <h3>Search for Other Users</h3>
+    <input type="text" id="searchInput" placeholder="Search by name or skill" />
+    <button onclick="searchUsers()">Search</button>
+    <div id="results"></div>
+    
+<hr> <!-- Separator from the main profile -->
+
+  <div id="profile">
+    <p><strong>Name:</strong> <span id="name"></span></p>
+    <p><strong>Email:</strong> <span id="email"></span></p>
+    <p><strong>Bio:</strong> <span id="bio"></span></p>
+    <p><strong>Skills:</strong> <span id="skills"></span></p>
+
+    <h3>Update Bio & Skills</h3>
+    <form id="updateForm">
+      <textarea id="bioInput" placeholder="New bio..."></textarea><br>
+      <input type="text" id="skillsInput" placeholder="Comma-separated skills"><br>
+      <button type="submit">Update Profile</button>
+    </form>
+  </div>
+
+  <hr>
+
+  <div id="posts">
+    <h3>Your Posts</h3>
+    <form id="postForm">
+      <textarea id="postContent" placeholder="Write a post..." required></textarea><br>
+      <button type="submit">Post</button>
+    </form>
+    <div id="postList"></div>
+  </div>
+
+  <br>
+  <button onclick="logout()">Logout</button>
+
+  <script src="script.js"></script>
+</body>
+</html>
