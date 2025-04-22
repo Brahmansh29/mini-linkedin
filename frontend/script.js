@@ -1,12 +1,15 @@
-// Replace this with your backend URL
 const BASE_URL = 'http://localhost:5000/api';
+const token = localStorage.getItem('token');
+const authHeaders = {
+  'Content-Type': 'application/json',
+  Authorization: token
+};
 
-// SIGNUP
+// ----------- SIGNUP ----------
 const signupForm = document.getElementById('signupForm');
 if (signupForm) {
   signupForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const name = document.getElementById('name').value;
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
@@ -27,12 +30,11 @@ if (signupForm) {
   });
 }
 
-// LOGIN
+// ----------- LOGIN ----------
 const loginForm = document.getElementById('loginForm');
 if (loginForm) {
   loginForm.addEventListener('submit', async (e) => {
     e.preventDefault();
-
     const email = document.getElementById('email').value;
     const password = document.getElementById('password').value;
 
@@ -53,13 +55,7 @@ if (loginForm) {
   });
 }
 
-const token = localStorage.getItem('token');
-const authHeaders = {
-  'Content-Type': 'application/json',
-  Authorization: token
-};
-
-// PROFILE VIEW
+// ----------- LOAD PROFILE ----------
 async function loadProfile() {
   const res = await fetch(`${BASE_URL}/users/me`, { headers: authHeaders });
   const data = await res.json();
@@ -69,8 +65,6 @@ async function loadProfile() {
     document.getElementById('email').textContent = data.email;
     document.getElementById('bio').textContent = data.bio || '-';
     document.getElementById('skills').textContent = data.skills?.join(', ') || '-';
-
-    // Pre-fill update form
     document.getElementById('bioInput').value = data.bio || '';
     document.getElementById('skillsInput').value = data.skills?.join(', ') || '';
   } else {
@@ -78,7 +72,7 @@ async function loadProfile() {
   }
 }
 
-// UPDATE PROFILE
+// ----------- UPDATE PROFILE ----------
 const updateForm = document.getElementById('updateForm');
 if (updateForm) {
   updateForm.addEventListener('submit', async (e) => {
@@ -102,7 +96,7 @@ if (updateForm) {
   });
 }
 
-// CREATE POST
+// ----------- CREATE POST ----------
 const postForm = document.getElementById('postForm');
 if (postForm) {
   postForm.addEventListener('submit', async (e) => {
@@ -125,12 +119,14 @@ if (postForm) {
   });
 }
 
-// LOAD POSTS
+// ----------- LOAD POSTS ----------
 async function loadPosts() {
   const res = await fetch(`${BASE_URL}/posts/me`, { headers: authHeaders });
   const posts = await res.json();
 
   const postList = document.getElementById('postList');
+  if (!postList) return;
+
   postList.innerHTML = '';
   posts.forEach(post => {
     const div = document.createElement('div');
@@ -140,65 +136,76 @@ async function loadPosts() {
   });
 }
 
-// LOGOUT
+// ----------- LOGOUT ----------
 function logout() {
   localStorage.removeItem('token');
   window.location.href = 'index.html';
 }
 
-// Init dashboard
+// ----------- INIT DASHBOARD ----------
 if (window.location.pathname.includes('profile.html')) {
   if (!token) window.location.href = 'index.html';
   loadProfile();
   loadPosts();
 }
 
+// ----------- SEARCH USERS ----------
 async function searchUsers() {
-    const query = document.getElementById('searchInput').value.trim();
-    if (!query) return alert('Enter a search term');
-  
-    const res = await fetch(`${BASE_URL}/users/search?q=${encodeURIComponent(query)}`, {
-      headers: authHeaders
-    });
-  
-    const users = await res.json();
-    const resultsDiv = document.getElementById('results');
-    resultsDiv.innerHTML = '';
-  
-    if (users.length === 0) {
-      resultsDiv.innerHTML = '<p>No users found.</p>';
-      return;
-    }
-  
-    users.forEach(u => {
-      const div = document.createElement('div');
-      div.innerHTML = `
-        <h4>${u.name}</h4>
-        <p>Email: ${u.email}</p>
-        <p>Bio: ${u.bio || '-'}</p>
-        <p>Skills: ${u.skills?.join(', ') || '-'}</p>
-        <button onclick="viewProfile('${u._id}')">View Profile</button>
-        <hr>
-      `;
-      resultsDiv.appendChild(div);
-    });
+  const query = document.getElementById('searchInput').value.trim();
+  if (!query) return alert('Enter a search term');
+
+  const res = await fetch(`${BASE_URL}/users/search?q=${encodeURIComponent(query)}`, {
+    headers: authHeaders
+  });
+
+  const users = await res.json();
+  const resultsDiv = document.getElementById('results');
+  resultsDiv.innerHTML = '';
+
+  if (users.length === 0) {
+    resultsDiv.innerHTML = '<p>No users found.</p>';
+    return;
   }
-  
-  function viewProfile(id) {
-    localStorage.setItem('viewUserId', id);
-    window.location.href = 'viewProfile.html';
+
+  users.forEach(u => {
+    const div = document.createElement('div');
+    div.innerHTML = `
+      <h4>${u.name}</h4>
+      <p>Email: ${u.email}</p>
+      <p>Bio: ${u.bio || '-'}</p>
+      <p>Skills: ${u.skills?.join(', ') || '-'}</p>
+      <button onclick="viewProfile('${u._id}')">View Profile</button>
+      <hr>
+    `;
+    resultsDiv.appendChild(div);
+  });
+}
+
+function viewProfile(id) {
+  localStorage.setItem('viewUserId', id);
+  window.location.href = 'viewProfile.html';
+}
+
+// ----------- VIEW PUBLIC PROFILE ----------
+async function loadViewedProfile() {
+  const userId = localStorage.getItem('viewUserId');
+  if (!userId) {
+    document.getElementById('profileInfo').innerHTML = "<p>User ID not found.</p>";
+    return;
   }
-  
-  async function loadViewedProfile() {
-    const userId = localStorage.getItem('viewUserId');
-    if (!userId) return;
-  
+
+  try {
     const res = await fetch(`${BASE_URL}/users/${userId}`, {
       headers: authHeaders
     });
-  
+
+    if (!res.ok) {
+      document.getElementById('profileInfo').innerHTML = `<p>Error loading profile: ${res.status}</p>`;
+      return;
+    }
+
     const { user, posts } = await res.json();
-  
+
     const profileInfo = document.getElementById('profileInfo');
     profileInfo.innerHTML = `
       <h3>${user.name}</h3>
@@ -207,17 +214,25 @@ async function searchUsers() {
       <p>Skills: ${user.skills?.join(', ') || '-'}</p>
       <hr>
     `;
-  
+
     const postDiv = document.getElementById('userPosts');
     postDiv.innerHTML = '<h3>Posts</h3>';
-    posts.forEach(post => {
-      const div = document.createElement('div');
-      div.innerHTML = `<p>${post.content}</p><small>${new Date(post.createdAt).toLocaleString()}</small><hr>`;
-      postDiv.appendChild(div);
-    });
+
+    if (!posts.length) {
+      postDiv.innerHTML += '<p>No posts found.</p>';
+    } else {
+      posts.forEach(post => {
+        const div = document.createElement('div');
+        div.innerHTML = `<p>${post.content}</p><small>${new Date(post.createdAt).toLocaleString()}</small><hr>`;
+        postDiv.appendChild(div);
+      });
+    }
+
+  } catch (err) {
+    document.getElementById('profileInfo').innerHTML = `<p>Fetch error: ${err.message}</p>`;
   }
-  
-  if (window.location.pathname.includes('viewProfile.html')) {
-    loadViewedProfile();
-  }
-  
+}
+
+if (window.location.pathname.includes('viewProfile.html')) {
+  loadViewedProfile();
+}

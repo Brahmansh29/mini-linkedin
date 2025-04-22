@@ -44,3 +44,18 @@ router.get('/:id', auth, async (req, res) => {
     res.status(500).json({ msg: 'Error fetching profile' });
   }
 });
+
+// In routes/userRoutes.js
+router.get("/profile/:id", async (req, res) => {
+  try {
+    const user = await User.findById(req.params.id).select("-password");
+    const posts = await Post.find({ user: req.params.id }).sort({ createdAt: -1 });
+
+    if (!user) return res.status(404).json({ message: "User not found" });
+
+    res.json({ user, posts });
+  } catch (err) {
+    res.status(500).json({ message: "Server error" });
+  }
+});
+
